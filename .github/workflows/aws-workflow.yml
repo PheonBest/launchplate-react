@@ -210,12 +210,19 @@ jobs:
           cd ${{ env.working_dir_tf }}
           terraform apply -auto-approve
 
+  terraform_dependency:
+    name: Terraform Dependency Check
+    needs: [detect_changes]
+    if: needs.detect_changes.outputs.terraform_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This job exists to create a dependency for s3_sync when terraform changes are detected"
+
   s3_sync:
     name: Web Sync to S3
-    needs: [web_build]
+    needs: [web_build, detect_changes, terraform_dependency, tf_plan_apply]
     if: github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.web_changes == 'true'
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
