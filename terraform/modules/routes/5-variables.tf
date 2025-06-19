@@ -15,7 +15,7 @@ variable "base_domain" {
 }
 
 variable "redirect_root_to_www" {
-  description = "[Cloudflare] Whether to redirect root domain to www"
+  description = "Whether to redirect root domain to www using Cloudflare Page Rules"
   type        = bool
   default     = true
 }
