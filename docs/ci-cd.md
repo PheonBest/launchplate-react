@@ -14,6 +14,11 @@ aws iam create-open-id-connect-provider \
   --thumbprint-list "a031c46782e6e6c662c2c87c76da9aa62ccabd8e"
 ```
 
+You get the following output:
+```
+{
+  "OpenIDConnectProviderArn": "arn:aws:iam::AWS_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+}
 ### 2. Create IAM Role for GitHub Actions
 
 Create an IAM role with the following trust policy:
@@ -40,15 +45,59 @@ Create an IAM role with the following trust policy:
   ]
 }
 ```
+Replace `<AWS_ACCOUNT_ID>` with your AWS account ID, retrieved from the previous step.
+Replace `<GITHUB_ORG>` and `<REPO_NAME>` with your GitHub organization and repository names.
 
-Attach the necessary policies to this role (e.g., S3FullAccess, CloudFrontFullAccess, Route53FullAccess, etc.)
+You can also create the role using aws CLI:
+```bin/sh
+cd docs
+aws iam create-role --role-name ReactLaunchplateGitHubActionsOIDCRole --assume-role-policy-document file://oidc-provider-role.json
+```
+
+As an output, we get:
+```json
+{
+    "Role": {
+        "Path": "/",
+        "RoleName": "ReactLaunchplateGitHubActionsOIDCRole",
+        "Arn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ReactLaunchplateGitHubActionsOIDCRole",
+        ...
+    }
+}
+```
+
+### 3. Attach Policies to Role
+
+We need to attach the necessary policies to this role (e.g., S3FullAccess, CloudFrontFullAccess, Route53FullAccess, etc.)
+
+First, we need to create the policy. Modify [oidc-provider-policy.json](oidc-provider-policy.json) by replacing `<PROJECT_NAME>` with your project name (e.g., `launchplate-react`) and `<AWS_ACCOUNT_ID>` with your AWS account ID.
+
+```bin/sh
+aws iam create-policy --policy-name ReactLaunchplateGitHubActionsOIDCRolePolicy --policy-document file://oidc-provider-policy.json
+```
+
+You get the following output:
+```json
+{
+    "Policy": {
+        "PolicyName": "ReactLaunchplateGitHubActionsOIDCRolePolicy",
+        "Arn": "arn:aws:iam::<AWS_ACCOUNT_ID>:policy/ReactLaunchplateGitHubActionsOIDCRolePolicy",
+        ...
+    }
+}
+```
+
+Then, we can attach the policy to the role:
+
+```bin/sh
+aws iam attach-role-policy --role-name ReactLaunchplateGitHubActionsOIDCRole --policy-arn arn:aws:iam::<AWS_ACCOUNT_ID>:policy/ReactLaunchplateGitHubActionsOIDCRolePolicy
+```
 
 ### 3. GitHub Repository Secrets
 
 Set the following GitHub repository secrets:
 
-- `AWS_ROLE_ARN`: The ARN of the IAM role created above
-- `BUCKET_TF_STATE`: The S3 bucket name for Terraform state
+- `AWS_ROLE_ARN`: The ARN of the IAM role created above, equal to `arn:aws:iam::<AWS_ACCOUNT_ID>:role/ReactLaunchplateGitHubActionsOIDCRole`
 
 ## Passing Secrets to Terraform
 

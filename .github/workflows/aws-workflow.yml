@@ -14,17 +14,17 @@ on:
       environment:
         description: "Select the environment to deploy to"
         required: true
-        default: "qa"
+        default: "dev"
         type: choice
         options:
-          - qa
-          - staging
-          - production
+          - dev
+          - stg
+          - prod
   push:
     branches:
       - "main"
       - "staging"
-      - "qa"
+      - "development"
       - "release/*"
       - "feature/*"
       - "bugfix/*"
@@ -32,62 +32,89 @@ on:
     branches:
       - "main"
       - "staging"
-      - "qa"
+      - "development"
       - "release/*"
       - "feature/*"
       - "bugfix/*"
 
 env:
   aws_region: eu-west-3
-  environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || (github.ref_name == 'main' && 'production' || github.ref_name == 'staging' && 'staging' || 'qa') }}
+  environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || (github.ref_name == 'main' && 'prod' || github.ref_name == 'staging' && 'stg' || github.ref_name == 'development' && 'dev') }}
   tf_version: "1.12.1"
-  tg_version: "0.81.0"
-  working_dir: "terraform/infrastructure-live"
+  working_dir: "terraform/live"
   tf_plugin_cache_dir: ${{ github.workspace }}/.terraform.d/plugin-cache
 
   # verbosity setting for Terraform logs
   TF_LOG: INFO
 
-  # S3 bucket for the Terraform state
-  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE}}
-
 jobs:
-  checks:
+  detect_changes:
     runs-on: ubuntu-latest
+    outputs:
+      terraform_changes: ${{ steps.filter.outputs.terraform }}
+      web_changes: ${{ steps.filter.outputs.web }}
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            terraform:
+              - 'terraform/**'
+            web:
+              - 'web/**'
+
+  tf_checks:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.terraform_changes == 'true'
+    needs: detect_changes
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup AWS & Terraform Cache
         uses: ./.github/actions/setup-aws-tf-cache
         with:
           aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.aws_region }}
 
-      - name: Check terragrunt HCL formatting
-        uses: gruntwork-io/terragrunt-action@v2
-        env:
-          TF_LOG: ${{ env.TF_LOG }}
-          TF_PLUGIN_CACHE_DIR: ${{ env.tf_plugin_cache_dir }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
-          tf_version: ${{ env.tf_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_dir: ${{ env.working_dir }}/${{ env.ENVIRONMENT }}
-          tg_command: "hclfmt --terragrunt-check --terragrunt-diff"
+          terraform_version: ${{ env.tf_version }}
 
-      - name: Validate Terraform configuration
-        uses: gruntwork-io/terragrunt-action@v2
-        env:
-          TF_LOG: ${{ env.TF_LOG }}
-          TF_PLUGIN_CACHE_DIR: ${{ env.tf_plugin_cache_dir }}
-        with:
-          tf_version: ${{ env.tf_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_dir: ${{ env.working_dir }}/${{ env.ENVIRONMENT }}
-          tg_command: "run-all validate"
+      - name: Terraform Format Check
+        run: |
+          cd terraform/live
+          terraform fmt -check -recursive
 
-  build:
+      - name: Terraform Init
+        run: |
+          cd terraform/live
+          terraform init
+
+      - name: Terraform Workspace
+        run: |
+          cd terraform/live
+          terraform workspace select ${{ env.environment }} || terraform workspace new ${{ env.environment }}
+
+      - name: Terraform Validate
+        run: |
+          cd terraform/live
+          terraform validate
+
+  web_build:
     name: Lint, Test & Build
     runs-on: ubuntu-latest
-    needs: [checks]
+    if: github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.web_changes == 'true'
+    needs: [detect_changes]
     outputs:
       app_version: ${{ steps.get_version.outputs.app_version }}
 
@@ -108,32 +135,34 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: cd web && pnpm install
 
       - name: Run Vitest tests
-        run: pnpm test
+        run: cd web && pnpm test
         env:
           CI: true
 
       - name: Get App version
         id: get_version
         run: |
+          cd web
           APP_VERSION=$(node -p "require('./package.json').version")
           echo "app_version=$APP_VERSION" >> $GITHUB_OUTPUT
           echo "App Version: $APP_VERSION"
 
       - name: Build project
-        run: npm run build:${{ env.environment }}
+        run: cd web && npm run build:${{ env.environment }}
 
-      - name: Upload production-ready build files
-        id: deployment
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          path: ./dist
+          name: web-dist
+          path: web/dist
+          retention-days: 1
 
-  plan:
-    name: Validate & Plan
-    needs: [checks, build]
+  tf_plan_apply:
+    name: TF Apply
+    needs: [tf_checks]
     runs-on: ubuntu-latest
 
     steps:
@@ -146,53 +175,72 @@ jobs:
           aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.aws_region }}
 
-      - name: Plan
-        uses: gruntwork-io/terragrunt-action@v2
-        env:
-          TF_LOG: ${{ env.TF_LOG }}
-          TF_PLUGIN_CACHE_DIR: /github/workspace/.terraform.d/plugin-cache
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
-          tf_version: ${{ env.tf_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_dir: ${{ env.working_dir }}/${{ env.ENVIRONMENT }}
-          tg_command: "plan"
+          terraform_version: ${{ env.tf_version }}
 
-  apply:
-    name: Apply
-    needs: [plan]
+      - name: Terraform Init
+        run: |
+          cd terraform/live
+          terraform init
+
+      - name: Terraform Workspace
+        run: |
+          cd terraform/live
+          terraform workspace select ${{ env.environment }} || terraform workspace new ${{ env.environment }}
+
+      - name: Terraform Plan
+        run: |
+          cd terraform/live
+          terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: |
+          cd terraform/live
+          terraform apply -auto-approve
+
+  s3_sync:
+    name: Sync to S3
+    needs: [build]
+    if: github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.web_changes == 'true'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup AWS & Terraform Cache
-        uses: ./.github/actions/setup-aws-tf-cache
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.aws_region }}
 
-      - name: Apply
-        uses: gruntwork-io/terragrunt-action@v2
-        env:
-          TF_LOG: ${{ env.TF_LOG }}
-          TF_PLUGIN_CACHE_DIR: /github/workspace/.terraform.d/plugin-cache
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          tf_version: ${{ env.tf_version }}
-          tg_version: ${{ env.tg_version }}
-          tg_dir: ${{ env.working_dir }}/${{ env.ENVIRONMENT }}
-          tg_command: "apply"
+          name: web-dist
+          path: web/dist
+
+      - name: Sync to S3 Release environment
+        if: env.environment == 'prod'
+        run: |
+          aws s3 sync web/dist s3://${env.environment}-launchplate-react-primary && \
+          aws s3 sync web/dist s3://${env.environment}-launchplate-react-failover
+
+      - name: Sync to S3 Pre-release environment
+        if: env.environment != 'prod'
+        run: |
+          aws s3 sync web/dist s3://${env.environment}-launchplate-react-primary
 
   slack:
     name: Slack
-    needs: apply # set "needs" only last job except this job
-    runs-on: ubuntu-latest
-    # set "always"
+    needs: [sync]
     if: always()
+    runs-on: ubuntu-latest
 
     steps:
       # run this action to get the workflow conclusion
-      # You can get the conclusion via env (env.WORKFLOW_CONCLUSION)
       - uses: technote-space/workflow-conclusion-action@v3
 
       # run other action with the workflow conclusion

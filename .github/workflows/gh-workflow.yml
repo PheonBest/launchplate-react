@@ -12,35 +12,18 @@ permissions:
 on:
   # checkov:skip=CKV_GHA_7 reason="Environment selection is safe and intentional"
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Select the environment to deploy to'
-        required: true
-        default: 'qa'
-        type: choice
-        options:
-          - qa
-          - staging
-          - production
   push:
     branches:
-      - 'main'
-      - 'staging'
-      - 'qa'
-      - 'release/*'
-      - 'feature/*'
-      - 'bugfix/*'
+      - "main"
+      - "release/*"
+      - "feature/*"
+      - "bugfix/*"
   pull_request:
     branches:
-      - 'main'
-      - 'staging'
-      - 'qa'
-      - 'release/*'
-      - 'feature/*'
-      - 'bugfix/*'
-
-env:
-  ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || (github.ref_name == 'main' && 'production' || github.ref_name == 'staging' && 'staging' || 'qa') }}
+      - "main"
+      - "release/*"
+      - "feature/*"
+      - "bugfix/*"
 
 jobs:
   build:
@@ -48,21 +31,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       app_version: ${{ steps.get_version.outputs.app_version }}
-      environment: ${{ steps.init.outputs.environment }}
 
     steps:
-      - name: Pass env var through output
-        id: init
-        run: |
-          echo "environment=${{ env.ENVIRONMENT }}" >> $GITHUB_OUTPUT
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # specify a version if needed
+          node-version: "20" # specify a version if needed
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.1.0
@@ -83,7 +60,7 @@ jobs:
           echo "App Version: $APP_VERSION"
 
       - name: Build project
-        run: npm run build:${{ env.ENVIRONMENT }}
+        run: npm run build:prod
 
       - name: Upload production-ready build files
         id: deployment
@@ -98,7 +75,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    if: needs.build.outputs.environment == 'production'
 
     steps:
       - name: Deploy to GitHub Pages
