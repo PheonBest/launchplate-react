@@ -56,6 +56,11 @@ export default defineConfig(({mode}) => {
         }
       }
     ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
     server: {
       host: config.server.host,
       port: config.server.port,
