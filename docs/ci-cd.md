@@ -113,6 +113,11 @@ steps:
     run: terraform apply
 ```
 
+Add the following secrets:
+- `CLOUDFLARE_API_TOKEN` with the value `{"prod":"myTokenProd","stg":"myTokenStg","dev":"myTokenDev"}`
+- `AWS_ROLE_ARN`
+- `SLACK_WEBHOOK_URL`
+
 ### Method 2: AWS Secrets Manager
 
 For sensitive production values, use AWS Secrets Manager:
