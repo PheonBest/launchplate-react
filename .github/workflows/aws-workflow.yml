@@ -52,6 +52,11 @@ env:
   aws_region: eu-west-3
   environment: >-
     ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment ||
+        github.event_name == 'issue_comment' && (
+          github.ref_name == 'main' && 'prod' ||
+          github.ref_name == 'staging' && 'stg' ||
+          github.ref_name == 'development' && 'dev'
+        ) ||
         github.event_name == 'pull_request' && (
           github.event.pull_request.base.ref == 'main' && 'prod' ||
           github.event.pull_request.base.ref == 'staging' && 'stg' ||
@@ -243,13 +248,38 @@ jobs:
           path: ${{ env.working_dir_tf }}/tfplan
           retention-days: 5
 
+      - name: Generate Terraform Plan Output for PR
+        if: github.event_name == 'pull_request'
+        run: |
+          cd ${{ env.working_dir_tf }}
+          terraform show -no-color tfplan > plan_output.txt
+          echo "PLAN_OUTPUT<<EOF" >> $GITHUB_ENV
+          cat plan_output.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create Plan Summary Comment
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const body = '### Terraform Plan Created\n\nPlease review the plan and comment `/apply` to apply these changes.\n\n**Note:** Only members of the `terraform-approvers` team can approve and trigger the apply.';
+            # Create a summary of the plan
+            PLAN_SUMMARY=$(grep -E 'Plan:|No changes' <<< "$PLAN_OUTPUT" || echo "Plan: unknown")
+
+            const body = `### Terraform Plan Created
+            **Plan Summary:** ${PLAN_SUMMARY}
+
+            <details>
+            <summary>Click to view the full Terraform plan</summary>
+
+            \`\`\`terraform
+            ${PLAN_OUTPUT}
+            \`\`\`
+            </details>
+
+            Please review the plan and comment \`/apply\` to apply these changes.
+
+            **Note:** Only members of the \`terraform-approvers\` team can approve and trigger the apply.`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
