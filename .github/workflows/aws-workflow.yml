@@ -139,11 +139,13 @@ jobs:
           terraform init
 
       - name: Terraform Workspace
+        if: env.environment != '' && env.environment != 'false' && env.environment != null
         run: |
           cd ${{ env.working_dir_tf }}
           terraform workspace select ${{ env.environment }} || terraform workspace new ${{ env.environment }}
 
       - name: Terraform Validate
+        if: env.environment != '' && env.environment != 'false'
         run: |
           cd ${{ env.working_dir_tf }}
           terraform validate
@@ -206,6 +208,7 @@ jobs:
   tf_plan:
     name: TF Plan
     needs: [tf_checks]
+    if: env.environment != '' && env.environment != 'false' && env.environment != null
     runs-on: ubuntu-latest
 
     steps:
@@ -263,17 +266,21 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            # Create a summary of the plan
-            PLAN_SUMMARY=$(grep -E 'Plan:|No changes' <<< "$PLAN_OUTPUT" || echo "Plan: unknown")
+            const planOutput = process.env.PLAN_OUTPUT || '';
+            let planSummary = "Plan: unknown";
+            if (planOutput) {
+              const match = planOutput.match(/(Plan:.*|No changes.*)/);
+              if (match) planSummary = match[0];
+            }
 
             const body = `### Terraform Plan Created
-            **Plan Summary:** ${PLAN_SUMMARY}
+            **Plan Summary:** ${planSummary}
 
             <details>
             <summary>Click to view the full Terraform plan</summary>
 
             \`\`\`terraform
-            ${PLAN_OUTPUT}
+            ${planOutput}
             \`\`\`
             </details>
 
@@ -301,8 +308,12 @@ jobs:
       - name: Create Workflow Run Annotation for Manual Approval
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.auto_apply == 'false' || github.event_name == 'push'
         run: |
-          # Create a summary of the plan
-          PLAN_SUMMARY=$(grep -E 'Plan:|No changes' <<< "$PLAN_OUTPUT" || echo "Plan: unknown")
+          # Create a summary of the plan using a more reliable method
+          PLAN_SUMMARY=$(echo "$PLAN_OUTPUT" | grep -E 'Plan:|No changes' || echo "Plan: unknown")
+          # Handle empty plan output
+          if [ -z "$PLAN_OUTPUT" ]; then
+            PLAN_SUMMARY="Plan: unknown (empty plan output)"
+          fi
 
           # Create the annotation with plan details
           echo "::notice title=Manual Approval Required::Terraform plan created for environment '${{ env.environment }}'. Plan summary: $PLAN_SUMMARY. To apply, run this workflow again with auto_apply=true."
@@ -324,9 +335,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [tf_plan]
     if: |
-      (github.event_name == 'issue_comment' && github.event.issue.pull_request && github.event.comment.body == '/apply') ||
+      env.environment != '' && env.environment != 'false' && env.environment != null &&
+      ((github.event_name == 'issue_comment' && github.event.issue.pull_request && github.event.comment.body == '/apply') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.auto_apply == 'true') ||
-      (github.event_name == 'push' && (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/staging'))
+      (github.event_name == 'push' && (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/staging')))
 
     steps:
       - name: Check commenter team membership
@@ -442,7 +454,7 @@ jobs:
     name: Web Sync to S3
     needs: [web_build, detect_changes, terraform_dependency, tf_apply]
     if: |
-      (github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.web_changes == 'true') &&
+      env.environment != '' && env.environment != 'false' && env.environment != null &&(github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.web_changes == 'true') &&
       (needs.tf_apply.result == 'success' || needs.tf_apply.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
@@ -474,6 +486,7 @@ jobs:
 
       - name: Get CloudFront Distribution ID from Terraform
         working-directory: terraform/live
+        if: env.environment != '' && env.environment != 'false' && env.environment != null
         run: |
           terraform workspace select ${{ env.environment }}
           echo "CLOUDFRONT_ID=$(terraform output -raw cloudfront_distribution_id)" >> $GITHUB_ENV
