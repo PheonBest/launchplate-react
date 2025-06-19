@@ -17,6 +17,7 @@
         "acm:GetCertificate"
       ],
       "Resource": [
+        "arn:aws:s3:::<PROJECT_NAME>-tfstate",
         "arn:aws:s3:::*-<PROJECT_NAME>-primary",
         "arn:aws:s3:::*-<PROJECT_NAME>-primary/*",
         "arn:aws:s3:::*-<PROJECT_NAME>-failover",

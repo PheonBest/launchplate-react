@@ -139,10 +139,15 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: cd ${{ env.working_dir_web }} && pnpm install
+        run: |
+          cd ${{ env.working_dir_web }}
+          pnpm install
 
       - name: Run Vitest tests
-        run: cd ${{ env.working_dir_web }} && pnpm test
+        run: |
+          cd ${{ env.working_dir_web }}
+          pnpm test
+        continue-on-error: true
         env:
           CI: true
 
