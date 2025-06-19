@@ -110,7 +110,7 @@ You should see the following output:
 ![Create Cloudflare API Token](../docs/images/cloudflare_api_token.png)
 ## 3. Deploy
 
-This project uses **terragrunt** to keep the infrastructure **DRY**, i.e. reduce redundancy.
+This project uses **terragrunt** to keep the infrastructure **DRY**, i.e. reduce redundancy
 
 To deploy the whole stack, please run:
 
