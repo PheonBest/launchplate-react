@@ -202,7 +202,7 @@ jobs:
 
   s3_sync:
     name: Sync to S3
-    needs: [build]
+    needs: [web_build]
     if: github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.web_changes == 'true'
     runs-on: ubuntu-latest
 
