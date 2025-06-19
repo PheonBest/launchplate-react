@@ -30,6 +30,7 @@ resource "cloudflare_page_rule" "redirect_root_to_www" {
   zone_id  = data.cloudflare_zone.this[0].zone_id
   target   = "${var.domain_name}/*"
   priority = 1
+  status   = "active"
 
   actions = {
     forwarding_url = {
