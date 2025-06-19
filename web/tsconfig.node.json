@@ -6,7 +6,11 @@
     "lib": ["ES2021.String"],
     "moduleResolution": "Bundler",
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["_config.ts", "vite.config.ts", "./package.json", "utils/sitemap.ts"]
 }
