@@ -103,27 +103,23 @@ pnpm aws:sync:prod
 
 ### How to use the CI/CD Workflow
 
-Note: The infrastructure deployment never runs automatically. It requires manual approval:
+By safety, infrastructure deployment never runs automatically.
+It requires manual approval:
 - On **pull request**, the workflow creates a GitHub issue with the Terraform plan. When answering `/apply`, only members of the `terraform-approvers` team can approve.
 - On **workflow_dispatch** with the **"Auto Apply"** option enabled, the workflow will automatically apply the changes without requiring manual approval.
 
-#### **Manual Deployment with Approval**
-
-1. Trigger workflow_dispatch with `auto_apply = false`
-
-   To do that, go to the Actions tab in your GitHub repository, select the workflow you want to trigger, and click on the "Run workflow" button on the top right corner.
-   ![Run workflow_dispatch](docs/images/run_workflow.png)
-2. The workflow creates a GitHub issue with the Terraform plan
-3. Review the plan in the issue
-4. Comment `/apply` on the issue to approve
-5. Only members of the `terraform-approvers` team can approve
-6. The workflow will detect the comment and apply the changes using the correct environment
-
 #### **Automatic Deployment**
 
-For automated deployments, you can:
-- Push to development/staging branches (applies automatically)
-- Use workflow_dispatch with `auto_apply = true`
+On push, the workflow will automatically:
+1. Build the application using the target environment configuration.
+2. Generate a terraform plan.
+
+The branches are automatically deployed based on the branch name:
+| Source Branch | Target Environment |
+|---------------|--------------------|
+| main          | prod               |
+| staging       | stg                |
+| development   | dev                |
 
 #### **Pull Request Flow**
 
