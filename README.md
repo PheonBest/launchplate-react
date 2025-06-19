@@ -96,10 +96,37 @@ terraform apply
 To push the build website to S3, run the following command:
 
 ```bash
-aws s3 sync ../../web/dist s3://dev-launchplate-react-primary
+cd web
+pnpm build:prod
+pnpm aws:sync:prod
 ```
 
-### Deployment Process
+### How to use the CI/CD Workflow
 
-- Push to main or release/\* branch to auto-deploy to 'qa' environment
-- Deploy manually to any environment using workflow_dispatch in GitHub Actions
+#### **Manual Deployment with Approval**
+
+1. Trigger workflow_dispatch with `auto_apply = false`
+
+   To do that, go to the Actions tab in your GitHub repository, select the workflow you want to trigger, and click on the "Run workflow" button on the top right corner.
+   ![Run workflow_dispatch](docs/images/run_workflow.png)
+2. The workflow creates a GitHub issue with the Terraform plan
+3. Review the plan in the issue
+4. Comment `/apply` on the issue to approve
+5. Only members of the `terraform-approvers` team can approve
+6. The workflow will detect the comment and apply the changes using the correct environment
+
+#### **Automatic Deployment**
+
+For automated deployments, you can:
+- Push to development/staging branches (applies automatically)
+- Use workflow_dispatch with `auto_apply = true`
+
+#### **Pull Request Flow**
+
+For PRs:
+1. The workflow runs and comments the plan on the PR
+2. Review the plan in the PR comments
+3. Comment `/apply` to approve
+4. Only members of the `terraform-approvers` team can approve
+
+This implementation addresses both issues you identified while maintaining a clean, understandable workflow structure.
