@@ -81,7 +81,7 @@ jobs:
         with:
           filters: |
             terraform:
-              - 'terraform/**'
+              - 'terraform/**/*.tf'
             web:
               - 'web/**'
 
