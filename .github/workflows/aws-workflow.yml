@@ -235,13 +235,13 @@ jobs:
       - name: Sync to S3 Release environment
         if: env.environment == 'prod'
         run: |
-          aws s3 sync web/dist s3://${env.environment}-launchplate-react-primary && \
-          aws s3 sync web/dist s3://${env.environment}-launchplate-react-failover
+          aws s3 sync web/dist s3://${{ env.environment }}-launchplate-react-primary && \
+          aws s3 sync web/dist s3://${{ env.environment }}-launchplate-react-failover
 
       - name: Sync to S3 Pre-release environment
         if: env.environment != 'prod'
         run: |
-          aws s3 sync web/dist s3://${env.environment}-launchplate-react-primary
+          aws s3 sync web/dist s3://${{ env.environment }}-launchplate-react-primary
 
   slack:
     name: Slack
