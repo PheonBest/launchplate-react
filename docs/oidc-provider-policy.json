@@ -22,6 +22,7 @@
       ],
       "Resource": [
         "arn:aws:s3:::<PROJECT_NAME>-tfstate",
+        "arn:aws:s3:::<PROJECT_NAME>-tfstate/*",
         "arn:aws:dynamodb:eu-west-3:YOUR_AWS_ACCOUNT_ID:table/<PROJECT_NAME>-tfstate-locks",
         "arn:aws:s3:::*-<PROJECT_NAME>-primary",
         "arn:aws:s3:::*-<PROJECT_NAME>-primary/*",
