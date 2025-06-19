@@ -50,7 +50,16 @@ on:
 
 env:
   aws_region: eu-west-3
-  environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || (github.ref_name == 'main' && 'prod' || github.ref_name == 'staging' && 'stg' || github.ref_name == 'development' && 'dev') }}
+  environment: >-
+    ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment ||
+        github.event_name == 'pull_request' && (
+          github.event.pull_request.base.ref == 'main' && 'prod' ||
+          github.event.pull_request.base.ref == 'staging' && 'stg' ||
+          github.event.pull_request.base.ref == 'development' && 'dev'
+        ) ||
+        github.ref_name == 'main' && 'prod' ||
+        github.ref_name == 'staging' && 'stg' ||
+        github.ref_name == 'development' && 'dev' }}
   tf_version: "1.12.1"
   working_dir_tf: "terraform/live"
   working_dir_web: "web"
