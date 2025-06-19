@@ -1,13 +1,13 @@
 variable "acm_certificate" {
   description = "The ARN of the ACM certificate"
-  type = string
-  nullable = true
+  type        = string
+  nullable    = true
 }
 
 variable "aliases" {
   description = "The aliases for the CloudFront distribution"
   type        = list(string)
-  nullable = true
+  nullable    = true
 }
 
 variable "region" {
@@ -35,6 +35,18 @@ variable "price_class" {
   description = "The price class for the CloudFront distribution"
   type        = string
   default     = "PriceClass_100"
+}
+
+variable "enable_waf" {
+  type        = bool
+  description = "Enable Web Application Firewall"
+  default     = false
+}
+
+variable "enable_encryption" {
+  type        = bool
+  description = "Enable encryption for the S3 bucket"
+  default     = false
 }
 
 variable "index_document" {
@@ -69,6 +81,6 @@ variable "enable_ruleset_known_bad_inputs" {
 
 variable "tags" {
   description = "Resource tags"
-  type = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 }

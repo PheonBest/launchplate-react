@@ -5,7 +5,7 @@
     "awscli@latest",
     "pre-commit@latest",
     "tflint@latest",
-    "tfsec@latest",
+    "trivy@latest",
     "checkov@latest",
     "tfupdate@latest",
     "terragrunt@latest",

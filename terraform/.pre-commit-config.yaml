@@ -1,39 +1,46 @@
 repos:
   - repo: https://github.com/terraform-docs/terraform-docs
-    rev: v0.16.0
+    rev: v0.20.0
     hooks:
       - id: terraform-docs-go
-        args:
-          [
-            "-c",
-            ".terraform-docs.yaml",
-            "./terraform/modules/s3",
-            "./terraform/modules/acm",
-          ]
-  # Estimate cost of one environment (staging here)
+        args: ["markdown", "terraform/modules/acm"]
+      - id: terraform-docs-go
+        args: ["markdown", "terraform/modules/s3-website"]
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.99.3
+    rev: v1.99.4
     hooks:
       - id: terraform_fmt
         args:
-          - --args=--path=./terraform/live
-          - --args=--workspace=prod
           - --args=-write=true
           - --args=-recursive
       - id: terraform_tflint
       - id: terraform_validate
       - id: terraform_checkov
+        args:
+          - --args=--quiet
       # Migrate from tfsec (deprecated) to trivy
       - id: terraform_trivy
         args:
           - --args=--skip-dirs="**/.terragrunt-cache"
+      # Estimate production infrastructure costs & verify constraints
       - id: infracost_breakdown
         args:
-          - --args=--path=./terraform/live/staging
+          - --args=--path=terraform/live/
+          - --args=--terraform-workspace=prod
+          - --args=--show-skipped
+          - --args=--format=table
           - --hook-config='.totalHourlyCost|tonumber < 0.1'
           - --hook-config='.totalHourlyCost|tonumber < 1'
           - --hook-config='.projects[].diff.totalMonthlyCost|tonumber != 10000'
-          - --hook-config='.currency = "EUR"'
+          - --hook-config='.currency == "EUR"'
+      # Generate production infrastructure costs report (JSON)
+      - id: infracost_breakdown
+        args:
+          - --args=--path=terraform/live/
+          - --args=--terraform-workspace=prod
+          - --args=--show-skipped
+          - --args=--format=json
+          - --args=--out-file=terraform/pre-commit-report/infracost_breakdown_prod.json
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:

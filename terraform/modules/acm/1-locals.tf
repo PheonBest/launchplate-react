@@ -1,6 +1,6 @@
 locals {
   use_cloudflare = var.dns_provider == "cloudflare"
-  use_route53 = !local.use_cloudflare
+  use_route53    = !local.use_cloudflare
 
   # Get distinct list of domains and SANs
   distinct_domain_names = distinct(

@@ -1,3 +1,5 @@
+# Pre-commit hooks
+
 (Optional) Pre-commit is used to ensure standards across the terraform codebase.
 
 ## How to install pre-commit
@@ -64,5 +66,9 @@ Once you run the command, any changes you commit from now will trigger all hooks
 If you want to trigger pre-commit manually, you can run the following command:
 
 ```bin/sh
-pre-commit
+cd terraform
+chmod +x run-hooks.sh
+./run-hooks.sh
+# OR
+# pre-commit run -a --verbose
 ```

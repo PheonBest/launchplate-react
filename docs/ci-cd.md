@@ -88,7 +88,7 @@ locals {
 
 ## CI/CD Pipeline Overview
 
-1. **CI Trigger**: 
+1. **CI Trigger**:
    - On push to environment branches (qa, staging, main)
    - On pull requests to these branches
    - Manual workflow dispatch

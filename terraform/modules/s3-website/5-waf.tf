@@ -1,10 +1,12 @@
 # Creates Access Control List to secure  CloudFront distribution
 
 resource "aws_wafv2_web_acl" "this" {
+  for_each = var.enable_waf ? { "enabled" = true } : {}
+
   name        = "${var.env}-${var.project_name}-cloudfront-waf"
   description = "WAF for CloudFront serving S3 static website"
   scope       = "CLOUDFRONT" # Must be CLOUDFRONT for CloudFront distributions[6][8]
-  provider = aws.useast1
+  provider    = aws.useast1
 
   default_action {
     allow {}
@@ -137,6 +139,8 @@ resource "aws_wafv2_web_acl" "this" {
 
 
 resource "aws_cloudwatch_log_group" "WafWebAclLoggroup" {
+  for_each = var.enable_waf ? { "enabled" = true } : {}
+
   name              = "${local.prefix}-aws-waf-logs-wafv2-web-acl"
   retention_in_days = 30
 
@@ -144,8 +148,10 @@ resource "aws_cloudwatch_log_group" "WafWebAclLoggroup" {
 }
 
 resource "aws_wafv2_web_acl_logging_configuration" "WafWebAclLogging" {
-  log_destination_configs = [aws_cloudwatch_log_group.WafWebAclLoggroup.arn]
-  resource_arn            = aws_wafv2_web_acl.this.arn
+  for_each = var.enable_waf ? { "enabled" = true } : {}
+
+  log_destination_configs = [aws_cloudwatch_log_group.WafWebAclLoggroup["enabled"].arn]
+  resource_arn            = aws_wafv2_web_acl.this["enabled"].arn
   depends_on = [
     aws_wafv2_web_acl.this,
     aws_cloudwatch_log_group.WafWebAclLoggroup

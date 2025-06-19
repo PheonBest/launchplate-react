@@ -40,7 +40,7 @@ resource "aws_s3_bucket_policy" "primary_bucket_policy" {
 }
 resource "aws_s3_bucket_policy" "failover_bucket_policy" {
   depends_on = [aws_s3_bucket.failover, aws_s3_bucket_website_configuration.failover]
-  for_each = data.aws_iam_policy_document.s3_failover_policy
+  for_each   = data.aws_iam_policy_document.s3_failover_policy
 
   bucket = aws_s3_bucket.failover[each.key].id
   policy = each.value.json
@@ -50,11 +50,11 @@ resource "aws_s3_bucket_policy" "failover_bucket_policy" {
 resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   is_ipv6_enabled     = true
-  web_acl_id          = aws_wafv2_web_acl.this.arn
+  web_acl_id          = var.enable_waf ? aws_wafv2_web_acl.this["enabled"].arn : null
   default_root_object = var.index_document
-  price_class = var.price_class
-  aliases = var.acm_certificate == null ? null : var.aliases
-  tags = var.tags
+  price_class         = var.price_class
+  aliases             = var.acm_certificate == null ? null : var.aliases
+  tags                = var.tags
 
   # Custom error responses for SPA routing
   custom_error_response {
@@ -63,7 +63,7 @@ resource "aws_cloudfront_distribution" "this" {
     response_page_path    = "/index.html"
     error_caching_min_ttl = 10
   }
-  
+
   custom_error_response {
     error_code            = 404
     response_code         = 200

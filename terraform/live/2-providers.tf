@@ -6,7 +6,7 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5"
     }
-    
+
     aws = {
       source  = "hashicorp/aws"
       version = "~> 4.62"
@@ -22,5 +22,5 @@ provider "aws" {
   region = "us-east-1"
 }
 provider "cloudflare" {
-  api_token = var.cloudflare_api_key[terraform.workspace]
+  api_token = var.cloudflare_api_token[terraform.workspace]
 }

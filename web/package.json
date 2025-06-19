@@ -40,7 +40,10 @@
     "betterer": "betterer",
     "betterer:watch": "betterer --watch",
     "betterer:ci": "betterer ci",
-    "serve": "tsx dist-server/server.ts"
+    "serve": "tsx dist-server/server.ts",
+    "aws:sync:prod": "aws s3 sync dist s3://prod-launchplate-react-primary && aws s3 sync dist s3://prod-launchplate-react-failover",
+    "aws:sync:stg": "aws s3 sync dist s3://stg-launchplate-react-primary",
+    "aws:sync:dev": "aws s3 sync dist s3://dev-launchplate-react-primary"
   },
   "config": {
     "commitizen": {

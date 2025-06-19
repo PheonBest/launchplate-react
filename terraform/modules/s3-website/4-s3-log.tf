@@ -5,6 +5,22 @@ resource "aws_s3_bucket" "log_bucket" {
   tags = var.tags
 }
 
+# Encryption for log bucket
+resource "aws_s3_bucket_server_side_encryption_configuration" "log_bucket_encryption" {
+  count = var.enable_encryption ? 1 : 0
+
+  bucket = aws_s3_bucket.log_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = var.enable_encryption ? aws_kms_key.shared[0].arn : null
+      sse_algorithm     = var.enable_encryption ? "aws:kms" : "AES256"
+    }
+  }
+}
+
+
+
 # Public access block for log bucket (same settings)
 resource "aws_s3_bucket_public_access_block" "log_public_access" {
   bucket = aws_s3_bucket.log_bucket.id
@@ -18,6 +34,16 @@ resource "aws_s3_bucket_public_access_block" "log_public_access" {
 # - Allow S3 buckets to send logs
 # - Allow Cloudflare to send logs
 data "aws_caller_identity" "current" {}
+
+# To allow CloudFront distribution to send logs to the log bucket,
+# ACLs must be enabled since april 2023
+resource "aws_s3_bucket_ownership_controls" "log_bucket_ownership" {
+  bucket = aws_s3_bucket.log_bucket.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
 
 resource "aws_s3_bucket_policy" "log_bucket_policy" {
   bucket = aws_s3_bucket.log_bucket.id

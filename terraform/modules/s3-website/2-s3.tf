@@ -8,17 +8,21 @@ resource "aws_s3_bucket" "primary" {
 
 # Encryption
 resource "aws_kms_key" "shared" {
+  count = var.enable_encryption ? 1 : 0
+
   is_enabled          = true
   enable_key_rotation = true
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "primary_encryption_configuration" {
+  count = var.enable_encryption ? 1 : 0
+
   bucket = aws_s3_bucket.primary.id
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.shared.arn
-      sse_algorithm     = "aws:kms"
+      kms_master_key_id = var.enable_encryption ? aws_kms_key.shared[0].arn : null
+      sse_algorithm     = var.enable_encryption ? "aws:kms" : "AES256"
     }
   }
 }

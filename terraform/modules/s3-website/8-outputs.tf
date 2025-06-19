@@ -13,6 +13,15 @@ output "s3_failover_bucket_url" {
   value       = var.enable_failover_s3 ? "http://${aws_s3_bucket.failover["enabled"].bucket}.s3-website.${var.region}.amazonaws.com" : null
 }
 
+output "s3_failover_bucket_name" {
+  description = "The name of the S3 failover bucket hosting the website"
+  value       = var.enable_failover_s3 ? aws_s3_bucket.failover["enabled"].bucket : null
+}
+
 output "cloudfront_distribution_domain" {
   value = aws_cloudfront_distribution.this.domain_name
+}
+
+output "cloudfront_hosted_zone_id" {
+  value = aws_cloudfront_distribution.this.hosted_zone_id
 }

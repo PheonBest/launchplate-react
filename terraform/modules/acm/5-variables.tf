@@ -11,7 +11,7 @@ variable "dns_provider" {
 variable "domain_name" {
   description = "A domain name for which the certificate should be issued"
   type        = string
-  nullable = false
+  nullable    = false
 }
 
 variable "subject_alternative_names" {
@@ -23,10 +23,10 @@ variable "subject_alternative_names" {
 variable "zone_name" {
   description = "The name of the Cloudflare/Route53 zone to contain this record."
   type        = string
-  nullable = false
+  nullable    = false
 }
 
-variable "cloudflare_api_key" {
+variable "cloudflare_api_token" {
   description = "The Cloudflare API token."
   type        = string
   sensitive   = true
@@ -73,6 +73,5 @@ variable "dns_ttl" {
   type        = number
   # When a DNS record is marked as `proxied` the TTL must be 1 as Cloudflare will control the TTL internally.
   # When a DNS record isn't marked as `proxied`, TTL can be set to 120
-  default     = 120
+  default = 120
 }
-

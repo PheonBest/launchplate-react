@@ -2,18 +2,26 @@
 
 A React application deployed to AWS using Terraform with multiple environment support.
 
-## Project Structure
+- **Frontend**: React **static** **SPA** hosted on S3 and distributed via CloudFront
+- **DNS**: Managed by either **CloudFlare** or **Route53** (environment-dependent)
+- **Optional Features**: S3 buckets encryption (disabled by default), WAF protection (disabled by default)
+- **SSL Certificates**: AWS ACM with DNS validation
+- **Redirect from root to www**: Enabled by default when using Cloudflare, based on Page Rules. This feature isn't supported when using Route53.
 
 ```
 ├── .github/
 │   ├── actions/          # Custom GitHub Actions
 │   └── workflows/        # GitHub Actions workflows
 ├── terraform/
-│   ├── live              # Workspace-CLI single entry for multiple environments
+│   ├── live              # Workspace-CLI environments
 │   ├── modules/          # Reusable Terraform modules
 │   └── bootstrap/        # Bootstrap shared TF state
-└── web/                  # React application source code
+└── web/                      # React application source code
 ```
+
+## Documentation
+- [Infrastructure and CI/CD pipeline setup](/terraform/README.md)
+- [Use pre-commit](/docs/pre-commit.md)
 
 ## Development Setup
 
@@ -56,11 +64,17 @@ A React application deployed to AWS using Terraform with multiple environment su
 This project uses Terraform Workspaces to manage multiple environments (qa, staging, production).
 
 ```bash
+cd terraform/live
 # Initialize Terraform
 terraform init
 
-# Select workspace
-terraform workspace select qa     # or staging, production
+# Initialize Workspaces
+terraform workspace new dev
+terraform workspace new stg
+terraform workspace new prod
+terraform workspace list
+
+terraform workspace select dev
 
 # Plan changes
 terraform plan
@@ -69,13 +83,15 @@ terraform plan
 terraform apply
 ```
 
+### Pushing website to S3
+
+To push the build website to S3, run the following command:
+
+```bash
+aws s3 sync ../../web/dist s3://dev-launchplate-react-primary
+```
+
 ### Deployment Process
 
 - Push to main or release/\* branch to auto-deploy to 'qa' environment
-- Use workflow_dispatch in GitHub Actions to select environment
-
-## Architecture
-
-- **Frontend**: React application hosted on S3 and distributed via CloudFront
-- **DNS**: Managed by either CloudFlare or Route53 (environment-dependent)
-- **SSL Certificates**: AWS ACM with DNS validation
+- Deploy manually to any environment using workflow_dispatch in GitHub Actions

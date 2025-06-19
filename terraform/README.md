@@ -1,15 +1,8 @@
 # Deploy a static website to S3 w/ Cloudfront
 
-![Architecture](./architecture.png)
+![Architecture](../docs/images/architecture.png)
 
-## How to develop
-```
-cd terraform
-devbox shell
-
-```
-
-## 2. Configure Github Action access to AWS
+## 1. Configure Github Action access to AWS
 ![Bootstrap backend](bootstrap_backend)
 ```sh
 terragrunt run --config root.hcl --backend-bootstrap -- init
@@ -25,8 +18,7 @@ For AWS to trust GitHub’s OIDC tokens, an OIDC provider must be created in IAM
 4. For the audience, use: s[ts.amazonaws.com‍](ts.amazonaws.com‍)
 5. Click Add Provider to save the configuration.
 
-![](create_web_identity.png)
-![](configure_web_identity.png)
+![Create Web Identity Provider](../docs/images/create_web_identity.png)
 
 ### B. Configure an IAM Role for Github action
 
@@ -90,8 +82,32 @@ Attach the following permissions to the role: [iam_policy.tf_s3_cloudfront](iam_
 
 Once done, click Create Role and copy the Role ARN for use in GitHub Actions.
 
-Go tyour repo's settings > Actions > Secrets and add the secret key AWS_ROLE_ARN with the ARN value you copied.
+Go to your repo's settings > Actions > Secrets and add the secret key AWS_ROLE_ARN with the ARN value you copied.
 
+## 2. Get Cloudflare API Token
+If using Cloudflare, you need to retrieve an API Token with the following permissions:
+- Manage DNS Zone
+- Manage Page Rules
+- Edit DNS Records
+
+1. Go to the dashboard, then Profile > [API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+2. Click on Create Token
+3. Select Custom Token
+4. Name the token, e.g. "terraform-cloudflare"
+5. Select the following permissions:
+   - Zone > Zone > Read
+   - Zone > Zone > Edit
+   - Zone > DNS > Read
+   - Zone > DNS > Edit
+   - Zone > Page Rules > Read
+   - Zone > Page Rules > Edit
+6. Select Zone Resources: Include Specific Zone and select your domain
+7. Click on Continue to summary
+8. Click on Create Token
+9. Copy the token and set it as the `cloudflare_api_token` variable in your Terraform configuration
+
+You should see the following output:
+![Create Cloudflare API Token](../docs/images/cloudflare_api_token.png)
 ## 3. Deploy
 
 This project uses **terragrunt** to keep the infrastructure **DRY**, i.e. reduce redundancy.
@@ -105,5 +121,5 @@ terragrunt apply --all
 
 ## Credits
 
-- Daniel Amarán. **Comment déployer un site web sur Amazon S3 en utilisant Terraform ?** [alter-solutions.fr](alter-solutions.fr) [en ligne]. 23/01/2024. Disponible sur: [https://www.alter-solutions.fr/blog/site-web-amazon-s3-terraform](https://www.alter-solutions.fr/blog/site-web-amazon-s3-terraform)
-- Firefly. **Integrating OIDC with Github Action to Manage Terraform Deployment on AWS**. [www.firefly.ai](www.firefly.ai) [en ligne]. Disponible sur: [https://www.firefly.ai/academy/integrating-oidc-with-github-action-to-manage-terraform-deployment-on-aws](https://www.firefly.ai/academy/integrating-oidc-with-github-action-to-manage-terraform-deployment-on-aws)
+- Daniel Amarán. **How to deploy a website on Amazon S3 using Terraform?** [alter-solutions.fr](alter-solutions.fr) [online]. 01/23/2024. Available at: [https://www.alter-solutions.fr/blog/site-web-amazon-s3-terraform](https://www.alter-solutions.fr/blog/site-web-amazon-s3-terraform)
+- Firefly. **Integrating OIDC with Github Action to Manage Terraform Deployment on AWS**. [www.firefly.ai](www.firefly.ai) [online]. Available at: [https://www.firefly.ai/academy/integrating-oidc-with-github-action-to-manage-terraform-deployment-on-aws

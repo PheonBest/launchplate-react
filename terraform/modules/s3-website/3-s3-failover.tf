@@ -10,14 +10,14 @@ resource "aws_s3_bucket" "failover" {
 
 # Encryption
 resource "aws_s3_bucket_server_side_encryption_configuration" "failover" {
-  for_each = var.enable_failover_s3 ? { "enabled" = true } : {}
+  for_each = var.enable_failover_s3 && var.enable_encryption ? { "enabled" = true } : {}
 
   bucket = aws_s3_bucket.failover["enabled"].id
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.shared.arn
-      sse_algorithm     = "aws:kms"
+      kms_master_key_id = var.enable_encryption ? aws_kms_key.shared[0].arn : null
+      sse_algorithm     = var.enable_encryption ? "aws:kms" : "AES256"
     }
   }
 }
