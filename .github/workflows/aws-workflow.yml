@@ -41,7 +41,8 @@ env:
   aws_region: eu-west-3
   environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || (github.ref_name == 'main' && 'prod' || github.ref_name == 'staging' && 'stg' || github.ref_name == 'development' && 'dev') }}
   tf_version: "1.12.1"
-  working_dir: "terraform/live"
+  working_dir_tf: "terraform/live"
+  working_dir_web: "web"
   tf_plugin_cache_dir: ${{ github.workspace }}/.terraform.d/plugin-cache
 
   # verbosity setting for Terraform logs
@@ -92,22 +93,22 @@ jobs:
 
       - name: Terraform Format Check
         run: |
-          cd terraform/live
+          cd ${{ env.working_dir_tf }}
           terraform fmt -check -recursive
 
       - name: Terraform Init
         run: |
-          cd terraform/live
+          cd ${{ env.working_dir_tf }}
           terraform init
 
       - name: Terraform Workspace
         run: |
-          cd terraform/live
+          cd ${{ env.working_dir_tf }}
           terraform workspace select ${{ env.environment }} || terraform workspace new ${{ env.environment }}
 
       - name: Terraform Validate
         run: |
-          cd terraform/live
+          cd ${{ env.working_dir_tf }}
           terraform validate
 
   web_build:
@@ -135,29 +136,29 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: cd web && pnpm install
+        run: cd ${{ env.working_dir_web }} && pnpm install
 
       - name: Run Vitest tests
-        run: cd web && pnpm test
+        run: cd ${{ env.working_dir_web }} && pnpm test
         env:
           CI: true
 
       - name: Get App version
         id: get_version
         run: |
-          cd web
+          cd ${{ env.working_dir_web }}
           APP_VERSION=$(node -p "require('./package.json').version")
           echo "app_version=$APP_VERSION" >> $GITHUB_OUTPUT
           echo "App Version: $APP_VERSION"
 
       - name: Build project
-        run: cd web && npm run build:${{ env.environment }}
+        run: cd ${{ env.working_dir_web }} && npm run build:${{ env.environment }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: web-dist
-          path: web/dist
+          path: ${{ env.working_dir_web }}/dist
           retention-days: 1
 
   tf_plan_apply:
@@ -182,22 +183,22 @@ jobs:
 
       - name: Terraform Init
         run: |
-          cd terraform/live
+          cd ${{ env.working_dir_tf }}
           terraform init
 
       - name: Terraform Workspace
         run: |
-          cd terraform/live
+          cd ${{ env.working_dir_tf }}
           terraform workspace select ${{ env.environment }} || terraform workspace new ${{ env.environment }}
 
       - name: Terraform Plan
         run: |
-          cd terraform/live
+          cd ${{ env.working_dir_tf }}
           terraform plan -out=tfplan
 
       - name: Terraform Apply
         run: |
-          cd terraform/live
+          cd ${{ env.working_dir_tf }}
           terraform apply -auto-approve
 
   s3_sync:

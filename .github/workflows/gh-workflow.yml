@@ -25,6 +25,9 @@ on:
       - "feature/*"
       - "bugfix/*"
 
+env:
+  working_dir_web: web
+
 jobs:
   build:
     name: Lint, Test & Build
@@ -48,6 +51,7 @@ jobs:
           run_install: true
 
       - name: Run Vitest tests
+
         run: pnpm test
         env:
           CI: true
@@ -55,18 +59,21 @@ jobs:
       - name: Get App version
         id: get_version
         run: |
+          cd ${{ env.working_dir_web }}
           APP_VERSION=$(node -p "require('./package.json').version")
           echo "app_version=$APP_VERSION" >> $GITHUB_OUTPUT
           echo "App Version: $APP_VERSION"
 
       - name: Build project
-        run: npm run build:prod
+        run: |
+          cd ${{ env.working_dir_web }}
+          npm run build:prod
 
       - name: Upload production-ready build files
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: ${{ env.working_dir_web }}/dist
 
   deploy:
     name: Deploy
