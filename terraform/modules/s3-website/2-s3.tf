@@ -10,7 +10,7 @@ resource "aws_s3_bucket" "primary" {
 resource "aws_kms_key" "shared" {
   count = var.enable_encryption ? 1 : 0
 
-  is_enabled          = true
+  is_enabled          = false
   enable_key_rotation = true
 }
 
