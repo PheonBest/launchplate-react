@@ -8,6 +8,7 @@ import legacy from '@vitejs/plugin-legacy';
 import react from '@vitejs/plugin-react-swc';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig, loadEnv } from 'vite';
 import svgr from 'vite-plugin-svgr';
 import config from './_config';
@@ -39,6 +40,7 @@ export default defineConfig(({mode}) => {
       target: 'esnext'
     },
     plugins: [
+      tsconfigPaths(),
       TanStackRouterVite({ target: 'react', autoCodeSplitting: true }),
       react(),
       tailwindcss(),
@@ -54,11 +56,6 @@ export default defineConfig(({mode}) => {
         }
       }
     ],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      },
-    },
     server: {
       host: config.server.host,
       port: config.server.port,
