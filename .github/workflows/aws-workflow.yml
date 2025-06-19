@@ -71,6 +71,13 @@ env:
   TF_LOG: INFO
 
 jobs:
+  dump:
+    name: Dump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump GitHub context
+        run: echo "${{ toJSON(github) }}"
+
   detect_changes:
     name: Detect Changes
     runs-on: ubuntu-latest
