@@ -243,13 +243,35 @@ jobs:
             });
 
       # For workflow_dispatch with manual approval, we'll use a different approach
+      - name: Generate Terraform Plan Output
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.auto_apply == 'false'
+        run: |
+          cd ${{ env.working_dir_tf }}
+          terraform show -no-color tfplan > plan_output.txt
+          echo "PLAN_OUTPUT<<EOF" >> $GITHUB_ENV
+          cat plan_output.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create Workflow Run Annotation for Manual Approval
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.auto_apply == 'false'
         run: |
-          echo "::notice title=Manual Approval Required::Terraform plan created for environment '${{ env.environment }}'. To apply, run this workflow again with auto_apply=true."
+          # Create a summary of the plan
+          PLAN_SUMMARY=$(grep -E 'Plan:|No changes' <<< "$PLAN_OUTPUT" || echo "Plan: unknown")
+
+          # Create the annotation with plan details
+          echo "::notice title=Manual Approval Required::Terraform plan created for environment '${{ env.environment }}'. Plan summary: $PLAN_SUMMARY. To apply, run this workflow again with auto_apply=true."
+
+          # Write full plan to step summary
+          echo "## Terraform Plan for environment: ${{ env.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "To apply this plan, run the workflow again with auto_apply=true" >> $GITHUB_STEP_SUMMARY
+          echo '```terraform' >> $GITHUB_STEP_SUMMARY
+          echo "$PLAN_OUTPUT" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
           echo "MANUAL_APPROVAL_NEEDED=true" >> $GITHUB_ENV
         env:
           ENVIRONMENT: ${{ env.environment }}
+          PLAN_OUTPUT: ${{ env.PLAN_OUTPUT }}
 
   tf_apply:
     name: TF Apply
