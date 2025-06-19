@@ -50,6 +50,7 @@ env:
 
 jobs:
   detect_changes:
+    name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
       terraform_changes: ${{ steps.filter.outputs.terraform }}
@@ -72,6 +73,7 @@ jobs:
               - 'web/**'
 
   tf_checks:
+    name: TF Checks
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.terraform_changes == 'true'
     needs: detect_changes
@@ -85,6 +87,7 @@ jobs:
         with:
           aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.aws_region }}
+          cache-path: ${{ env.tf_plugin_cache_dir }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -112,7 +115,7 @@ jobs:
           terraform validate
 
   web_build:
-    name: Lint, Test & Build
+    name: Web Lint, Test & Build
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.web_changes == 'true'
     needs: [detect_changes]
@@ -175,6 +178,7 @@ jobs:
         with:
           aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.aws_region }}
+          cache-path: ${{ env.tf_plugin_cache_dir }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -202,7 +206,7 @@ jobs:
           terraform apply -auto-approve
 
   s3_sync:
-    name: Sync to S3
+    name: Web Sync to S3
     needs: [web_build]
     if: github.event_name == 'workflow_dispatch' || needs.detect_changes.outputs.web_changes == 'true'
     runs-on: ubuntu-latest
