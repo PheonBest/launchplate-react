@@ -139,7 +139,7 @@
     "@vitejs/plugin-legacy": "^6.1.1",
     "@vitejs/plugin-react": "^4.5.0",
     "@vitejs/plugin-react-swc": "^3.10.0",
-    "@vitest/coverage-v8": "^3.2.1",
+    "@vitest/coverage-v8": "^3.2.4",
     "@vitest/eslint-plugin": "^1.2.1",
     "@vitest/ui": "^3.2.1",
     "autoprefixer": "^10.4.21",
@@ -180,7 +180,7 @@
     "vite": "link:@tanstack/router-plugin/vite",
     "vite-plugin-istanbul": "^7.0.0",
     "vite-plugin-svgr": "^4.3.0",
-    "vitest": "^3.1.4"
+    "vitest": "^3.2.4"
   },
   "msw": {
     "workerDirectory": [
