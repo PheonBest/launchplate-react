@@ -62,3 +62,8 @@ output "domain_records" {
   description = "List of domain names for which records were created"
   value       = module.routes.domain_records
 }
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution id"
+  value       = module.s3-website.cloudfront_distribution_id
+}

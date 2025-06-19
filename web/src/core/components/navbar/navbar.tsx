@@ -29,7 +29,7 @@ export default function Navbar() {
       <div className='flex items-center gap-2'>
         <p className='text-lg font-black'>Template</p>
         {/* Environment ( Not shown in production ) */}
-        {config.mode === 'production' ? undefined : (
+        {config.mode.startsWith('prod') ? undefined : (
           <p className={cn(styles.environment, styles[config.mode])}>{config.mode}</p>
         )}
       </div>

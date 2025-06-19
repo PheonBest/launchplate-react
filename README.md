@@ -19,6 +19,14 @@ A React application deployed to AWS using Terraform with multiple environment su
 └── web/                      # React application source code
 ```
 
+Make a table with three rows (production, staging, development) with two columns (root url redirected to www, www url)
+
+| Environment | Root URL (redirected to www) | WWW URL |
+|-------------|---------------------------|---------|
+| Production  | [launchplate-react.gloweet.com](https://launchplate-react.gloweet.com)                       | [www.launchplate-react.gloweet.com](https://www.launchplate-react.gloweet.com) |
+| Staging     | [stg-launchplate-react.gloweet.com](https://stg-launchplate-react.gloweet.com)                       | [www.stg-launchplate-react.gloweet.com](https://www.stg-launchplate-react.gloweet.com) |
+| Development | [dev-launchplate-react.gloweet.com](https://dev-launchplate-react.gloweet.com)                       | [www.dev-launchplate-react.gloweet.com](https://www.dev-launchplate-react.gloweet.com) |
+
 ## Documentation
 - [Infrastructure and CI/CD pipeline setup](/terraform/README.md)
 - [Use pre-commit](/docs/pre-commit.md)

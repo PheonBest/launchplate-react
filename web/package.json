@@ -35,15 +35,15 @@
     "build:prod": "vite build --mode prod",
     "build:stg": "vite build --mode stg",
     "build:dev": "vite build --mode dev",
-    "build": "vite build",
+    "build": "vite build --mode prod",
     "commit": "git-cz",
     "betterer": "betterer",
     "betterer:watch": "betterer --watch",
     "betterer:ci": "betterer ci",
     "serve": "tsx dist-server/server.ts",
-    "aws:sync:prod": "aws s3 sync dist s3://prod-launchplate-react-primary && aws s3 sync dist s3://prod-launchplate-react-failover",
-    "aws:sync:stg": "aws s3 sync dist s3://stg-launchplate-react-primary",
-    "aws:sync:dev": "aws s3 sync dist s3://dev-launchplate-react-primary"
+    "aws:sync:prod": "aws s3 sync dist s3://prod-launchplate-react-primary && aws s3 sync dist s3://prod-launchplate-react-failover && aws cloudfront create-invalidation --distribution-id E3N4DALZWT4TPP --paths '/*'",
+    "aws:sync:stg": "aws s3 sync dist s3://stg-launchplate-react-primary && aws cloudfront create-invalidation --distribution-id E2Y98Y110EI3ZG --paths '/*'",
+    "aws:sync:dev": "aws s3 sync dist s3://dev-launchplate-react-primary && aws cloudfront create-invalidation --distribution-id EADOQEBZ16OEM --paths '/*'"
   },
   "config": {
     "commitizen": {

@@ -1,32 +1,14 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { Request, Response } from 'express';
+
 import dotenv from 'dotenv';
-import express, { type Request, type Response } from 'express';
-
-// Load environment variables based on NODE_ENV
-const env = process.env.NODE_ENV ?? 'development';
-
-switch (env) {
-  case 'development':
-    dotenv.config({ path: '.env.development' });
-    break;
-  case 'test':
-    dotenv.config({ path: '.env.test' });
-    break;
-  case 'staging':
-    dotenv.config({ path: '.env.staging' });
-    break;
-  case 'production':
-    dotenv.config({ path: '.env.production' });
-    break;
-  default:
-    throw new Error(`Unknown environment: ${env}`);
-}
+import express from 'express';
 
 // Get base path from env (fallback to '/')
-const basePath = process.env.VITE_BASE_PATH ?? '/';
-const port = process.env.PORT ?? 3000;
+const basePath = '/';
+const port = 3060;
 
 const app = express();
 
